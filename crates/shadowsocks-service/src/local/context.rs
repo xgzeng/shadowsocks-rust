@@ -120,6 +120,13 @@ impl ServiceContext {
         self.context.dns_resolver()
     }
 
+    pub async fn check_outbound_blocked(&self, addr: &Address) -> bool {
+        match self.acl {
+            None => false,
+            Some(ref acl) => acl.check_outbound_blocked(&self.context, addr).await,
+        }
+    }
+
     /// Check if target should be bypassed
     pub async fn check_target_bypassed(&self, addr: &Address) -> bool {
         match self.acl {

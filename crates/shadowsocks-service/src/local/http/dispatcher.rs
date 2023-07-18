@@ -98,6 +98,10 @@ impl HttpDispatcher {
 
             debug!("HTTP CONNECT {}", host);
 
+            if self.context.check_outbound_blocked(&host).await {
+                return Err(io::Error::new(io::ErrorKind::Other, "outbound blocked"))
+            }
+
             // Connect to Shadowsocks' remote
             //
             // FIXME: What STATUS should I return for connection error?
