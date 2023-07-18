@@ -69,6 +69,22 @@ impl AutoProxyClientStream {
     where
         A: Into<Address>,
     {
+        // resolve addr locally
+        let target_addr : Address = addr.into();
+        let addr = if server.server_config().resolve_local() {
+            if let Address::DomainNameAddress(domain, port) = &target_addr {
+                let mut ip_addrs = context.dns_resolver().resolve(&domain, port.clone()).await?;
+                let sockaddr = ip_addrs.next()
+                    .filter(|saddr| !saddr.ip().is_unspecified())
+                    .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "no ip resolved"))?;
+                Address::SocketAddress(sockaddr)
+            } else {
+                target_addr
+            }
+        } else {
+            target_addr
+        };
+
         let flow_stat = context.flow_stat();
         let stream = match ProxyClientStream::connect_with_opts_map(
             context.context(),

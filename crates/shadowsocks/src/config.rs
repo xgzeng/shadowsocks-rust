@@ -339,6 +339,9 @@ pub struct ServerConfig {
 
     /// Weight
     weight: ServerWeight,
+
+    /// Resolve Domain locally, instead of pass to shadowsocks server
+    resolve_local: bool,
 }
 
 #[cfg(feature = "aead-cipher-2022")]
@@ -451,6 +454,7 @@ impl ServerConfig {
             id: None,
             mode: Mode::TcpAndUdp, // Server serves TCP & UDP by default
             weight: ServerWeight::new(),
+            resolve_local: false,
         }
     }
 
@@ -615,6 +619,14 @@ impl ServerConfig {
     /// Set server's balancer weight
     pub fn set_weight(&mut self, weight: ServerWeight) {
         self.weight = weight;
+    }
+
+    pub fn set_resolve_local(&mut self, value: bool) {
+        self.resolve_local = value;
+    }
+
+    pub fn resolve_local(&self) -> bool {
+        self.resolve_local
     }
 
     /// Get URL for QRCode

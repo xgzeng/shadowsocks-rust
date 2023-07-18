@@ -79,7 +79,7 @@ use shadowsocks::{
     plugin::PluginConfig,
 };
 #[cfg(feature = "trust-dns")]
-use trust_dns_resolver::config::{NameServerConfig, Protocol, ResolverConfig};
+use trust_dns_resolver::config::{NameServerConfig, Protocol, ResolverConfig, NameServerConfigGroup};
 
 use crate::acl::AccessControl;
 #[cfg(feature = "local-dns")]
@@ -217,6 +217,9 @@ struct SSConfig {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     acl: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    resolve_local: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -1804,6 +1807,10 @@ impl Config {
                     nsvr.set_timeout(timeout);
                 }
 
+                if let Some(value) = config.resolve_local {
+                    nsvr.set_resolve_local(value);
+                }
+
                 if let Some(remarks) = svr.remarks {
                     nsvr.set_remarks(remarks);
                 }
@@ -2076,6 +2083,26 @@ impl Config {
             "quad9_tls" => DnsConfig::TrustDns(ResolverConfig::quad9_tls()),
             #[cfg(all(feature = "trust-dns", feature = "dns-over-https"))]
             "quad9_https" => DnsConfig::TrustDns(ResolverConfig::quad9_https()),
+
+            #[cfg(all(feature = "trust-dns", feature = "dns-over-https"))]
+            "cloudflare_family_https" => {
+                let CLOUDFLARE_FAMILY_IPS = vec![
+                    IpAddr::V4(Ipv4Addr::new(1, 1, 1, 3)),
+                    IpAddr::V4(Ipv4Addr::new(1, 0, 0, 3)),
+                    // IpAddr::V6(Ipv6Addr::new(0x2001, 0x4860, 0x4860, 0, 0, 0, 0, 0x8888)),
+                    // IpAddr::V6(Ipv6Addr::new(0x2001, 0x4860, 0x4860, 0, 0, 0, 0, 0x8844)),
+                ];
+                DnsConfig::TrustDns(ResolverConfig::from_parts(
+                    None,
+                    vec![],
+                    NameServerConfigGroup::from_ips_https(
+                        &CLOUDFLARE_FAMILY_IPS,
+                        443,
+                        "family.cloudflare-dns.com".to_string(),
+                        true,
+                    ),
+                ))
+            }
 
             nameservers => self.parse_dns_nameservers(nameservers)?,
         };
