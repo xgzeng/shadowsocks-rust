@@ -217,9 +217,6 @@ struct SSConfig {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     acl: Option<String>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    resolve_local: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -355,6 +352,9 @@ struct SSServerExtConfig {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     acl: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    resolve_local: Option<bool>,
 }
 
 /// Server config type
@@ -1807,7 +1807,7 @@ impl Config {
                     nsvr.set_timeout(timeout);
                 }
 
-                if let Some(value) = config.resolve_local {
+                if let Some(value) = svr.resolve_local {
                     nsvr.set_resolve_local(value);
                 }
 
@@ -2606,6 +2606,7 @@ impl fmt::Display for Config {
                             .acl
                             .as_ref()
                             .and_then(|a| a.file_path().to_str().map(ToOwned::to_owned)),
+                        resolve_local: Some(svr.resolve_local()),
                     });
                 }
 
